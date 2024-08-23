@@ -1,1 +1,142 @@
-# expense-tracking-with-pdf
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <style>
+        body { 
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        input[type="text"], select, input[type=number], input[type=submit] {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input[type="submit"], #downloadPDF {
+            background-color: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: red;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Expense Tracker</h2>
+        <form id="expenseform">
+            <input type="text" id="description" placeholder="Expense Description" required> <br>
+            <select id="category" required>
+                <option value="">Select Category</option>
+                <option value="Food">Food</option>
+                <option value="Transportation">Transportation</option>
+                <option value="Utilities">Utilities</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Others">Others</option>
+            </select><br>
+            <input type="number" id="amount" placeholder="Amount" required><br>
+            <input type="submit" value="Add Expense">
+        </form>
+        <h3>Expense summary</h3>
+        <table id="expenseTable">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody id="expenseList">
+            </tbody>
+        </table>
+        <h3>Total Expenditure: ₹<span id="totalAmount">0</span></h3>
+        <button id="downloadPDF">Download as PDF</button>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.6.0/jspdf.umd.min.js"></script>
+    <script>
+        const { jsPDF } = window.jspdf;
+
+        const expenseform = document.getElementById('expenseform');
+        const expenseList = document.getElementById('expenseList');
+        const totalAmountElement = document.getElementById('totalAmount');
+        let totalAmount = 0;
+
+        expenseform.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const description = document.getElementById('description').value;
+            const category = document.getElementById('category').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+
+            if (description && category && !isNaN(amount)) {
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${description}</td>
+                    <td>${category}</td>
+                    <td>₹${amount.toFixed(2)}</td>
+                `;
+                expenseList.appendChild(newRow);
+
+                totalAmount += amount;
+                totalAmountElement.textContent = totalAmount.toFixed(2);
+
+                document.getElementById('description').value = '';
+                document.getElementById('category').value = '';
+                document.getElementById('amount').value = '';
+            } else {
+                alert('Please enter valid details');
+            }
+        });
+
+        document.getElementById('downloadPDF').addEventListener('click', function() {
+            const doc = new jsPDF();
+            let y = 10;
+
+            doc.setFontSize(16);
+            doc.text('Expense Tracker', 10, y);
+            y += 10;
+
+            doc.setFontSize(12);
+            doc.text('Expense Summary', 10, y);
+            y += 10;
+
+            doc.autoTable({
+                html: '#expenseTable',
+                startY: y,
+                theme: 'grid',
+                headStyles: { fillColor: [255, 0, 0] },
+                margin: { top: 20 },
+                didDrawPage: function (data) {
+                    doc.text('Total Expenditure: ₹' + totalAmount.toFixed(2), 10, doc.internal.pageSize.height - 10);
+                }
+            });
+
+            doc.save('expense-tracker.pdf');
+        });
+    </script>
+</body>
+</html>
